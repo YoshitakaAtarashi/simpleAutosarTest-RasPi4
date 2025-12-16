@@ -8,7 +8,7 @@ build/output/
 *.map
 *.lst
 
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
@@ -18,24 +18,34 @@ venv/
 env/
 ENV/
 *.egg-info/
+.pytest_cache/
 
-# IDEs
+# IDEs and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
 
-# OS generated
+# OS generated files
 .DS_Store
 Thumbs.db
 desktop.ini
+*.lnk
 
-# Trampoline generated
+# Trampoline generated files
 goil/
 *.arxml
 tpl_*.c
 tpl_*.h
+!app/tpl_os.h
+!app/tpl_os_stubs.c
+
+# External dependencies (should be cloned separately)
+trampoline/
+firmware/
 
 # Logs
 *.log
@@ -43,6 +53,9 @@ tpl_*.h
 # Temporary files
 *.tmp
 *.bak
+*.cache
+*.temp
 
-trampoline
-firmware
+# SD card test files
+*.img.test
+sdcard_test/
