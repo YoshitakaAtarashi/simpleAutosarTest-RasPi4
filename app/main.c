@@ -281,35 +281,36 @@ int main(void)
     while(1) {
         loop_counter++;
         
-        /* 約1秒ごとに表示（簡易的な遅延） */
-        if (loop_counter % 1000000 == 0) {
-            last_second++;
+        /* 約100msごとに表示（簡易的な遅延） */
+        if (loop_counter % 100000 == 0) {
+            /* カウンタをインクリメント */
+            counter_100ms++;
             
-            /* カウンター表示 */
-            output_puts("[Loop] Second: ");
-            output_put_dec(last_second);
-            output_puts(" | Counter: ");
-            output_put_dec(loop_counter / 1000000);
-            output_puts("\n");
+            /* 固定位置に100msカウンター表示 (行8) */
+            fb_set_cursor(0, 8);
+            fb_clear_line();  /* 行をクリア */
+            output_puts("  [100ms sim] Counter: ");
+            output_put_dec(counter_100ms);
             
             /* LED点滅 */
             gpio_led_toggle();
-            
-            /* Task100msの代替デバッグ表示 */
-            counter_100ms++;
-            output_puts("  [100ms sim] Counter: ");
-            output_put_dec(counter_100ms);
-            output_puts("\n");
         }
         
-        /* 10秒ごとに1000msカウンター表示 */
-        if (loop_counter % 10000000 == 0) {
+        /* 約1秒(1000ms)ごとに表示 */
+        if (loop_counter % 1000000 == 0) {
+            last_second++;
             counter_1000ms++;
-            output_puts("  [1000ms sim] Counter: ");
+            
+            /* 固定位置に1000msカウンター表示 (行10) */
+            fb_set_cursor(0, 10);
+            fb_clear_line();  /* 行をクリア */
+            output_puts("[1000ms sim] Counter: ");
             output_put_dec(counter_1000ms);
             output_puts(" | 100ms: ");
             output_put_dec(counter_100ms);
-            output_puts("\n");
+            output_puts(" | Uptime: ");
+            output_put_dec(last_second);
+            output_puts(" sec");
         }
     }
     

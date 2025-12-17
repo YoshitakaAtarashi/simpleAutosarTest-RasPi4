@@ -338,6 +338,30 @@ void fb_clear(void) {
     cursor_y = 0;
 }
 
+/* Clear current line */
+void fb_clear_line(void) {
+    if (!fb_addr) return;
+    
+    /* Clear from current cursor position to end of line */
+    uint32_t start_x = cursor_x * CHAR_WIDTH;
+    uint32_t start_y = cursor_y * CHAR_HEIGHT;
+    
+    for (uint32_t row = 0; row < CHAR_HEIGHT; row++) {
+        uint32_t* line = fb_addr + ((start_y + row) * (fb_pitch / 4));
+        for (uint32_t x = start_x; x < fb_width; x++) {
+            line[x] = 0;
+        }
+    }
+}
+
+/* Set cursor position (character coordinates) */
+void fb_set_cursor(uint32_t x, uint32_t y) {
+    if (x < COLS && y < ROWS) {
+        cursor_x = x;
+        cursor_y = y;
+    }
+}
+
 /* Set text color */
 void fb_set_color(uint8_t r, uint8_t g, uint8_t b) {
     text_color = (0xFF << 24) | (r << 16) | (g << 8) | b;

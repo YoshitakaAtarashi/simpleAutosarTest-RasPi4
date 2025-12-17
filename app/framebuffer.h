@@ -28,6 +28,12 @@ void fb_put_dec(uint32_t value);
 /* Clear screen */
 void fb_clear(void);
 
+/* Clear current line */
+void fb_clear_line(void);
+
+/* Set cursor position (character coordinates) */
+void fb_set_cursor(uint32_t x, uint32_t y);
+
 /* Set text color (RGB) */
 void fb_set_color(uint8_t r, uint8_t g, uint8_t b);
 
