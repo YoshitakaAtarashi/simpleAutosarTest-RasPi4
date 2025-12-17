@@ -89,6 +89,34 @@ CPU rpi_autosar {
     };
     
     /**
+     * タスク4: 100ms周期タスク
+     * 100msごとにカウンターをインクリメント
+     */
+    TASK Task100ms {
+        PRIORITY = 15;
+        AUTOSTART = TRUE {
+            APPMODE = std_mode;
+        };
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        STACKSIZE = 512;
+    };
+    
+    /**
+     * タスク5: 1000ms周期タスク
+     * 1秒ごとにカウンターをインクリメント
+     */
+    TASK Task1000ms {
+        PRIORITY = 12;
+        AUTOSTART = TRUE {
+            APPMODE = std_mode;
+        };
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        STACKSIZE = 512;
+    };
+    
+    /**
      * イベント: データ受信完了
      */
     EVENT EvtDataReady {
@@ -122,6 +150,36 @@ CPU rpi_autosar {
             APPMODE = std_mode;
             ALARMTIME = 50;      /* 初回起動: 50ms後 */
             CYCLETIME = 500;     /* 周期: 500ms */
+        };
+    };
+    
+    /**
+     * アラーム3: Task100msを100ms周期で起動
+     */
+    ALARM Alarm100ms {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task100ms;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_mode;
+            ALARMTIME = 10;      /* 初回起動: 10ms後 */
+            CYCLETIME = 100;     /* 周期: 100ms */
+        };
+    };
+    
+    /**
+     * アラーム4: Task1000msを1000ms周期で起動
+     */
+    ALARM Alarm1000ms {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task1000ms;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_mode;
+            ALARMTIME = 100;     /* 初回起動: 100ms後 */
+            CYCLETIME = 1000;    /* 周期: 1000ms */
         };
     };
     

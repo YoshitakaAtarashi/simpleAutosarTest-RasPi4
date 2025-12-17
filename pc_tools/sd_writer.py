@@ -97,41 +97,90 @@ class SDCardWriter:
         return True
     
     def list_drives(self):
-        """利用可能なドライブを一覧表示（Windows）"""
-        if platform.system() != "Windows":
-            self.print_warning("このオプションはWindows専用です")
-            return
+        """利用可能なドライブを一覧表示（Windows/macOS対応）"""
+        import subprocess
         
         print("\n" + "=" * 60)
         print(" 利用可能なドライブ")
         print("=" * 60)
         
-        # Windows: wmic コマンドでリムーバブルドライブを検出
-        import subprocess
-        try:
-            result = subprocess.run(
-                ['wmic', 'logicaldisk', 'get', 'caption,volumename,drivetype'],
-                capture_output=True,
-                text=True,
-                encoding='cp932'  # Windows日本語環境対応
-            )
-            
-            if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
-                print(f"\n{Fore.CYAN}検出されたドライブ:{Style.RESET_ALL}")
-                for line in lines[1:]:  # ヘッダーをスキップ
-                    if line.strip():
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            drive = parts[0]
-                            drive_type = parts[-1]
-                            # DriveType 2 = Removable
-                            if drive_type == '2':
-                                print(f"  {Fore.GREEN}[リムーバブル]{Style.RESET_ALL} {drive}")
-                            else:
-                                print(f"  {drive} (DriveType: {drive_type})")
-        except Exception as e:
-            self.print_warning(f"ドライブ検出エラー: {e}")
+        system = platform.system()
+        
+        if system == "Windows":
+            # Windows: wmic コマンドでリムーバブルドライブを検出
+            try:
+                result = subprocess.run(
+                    ['wmic', 'logicaldisk', 'get', 'caption,volumename,drivetype'],
+                    capture_output=True,
+                    text=True,
+                    encoding='cp932'  # Windows日本語環境対応
+                )
+                
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split('\n')
+                    print(f"\n{Fore.CYAN}検出されたドライブ:{Style.RESET_ALL}")
+                    for line in lines[1:]:  # ヘッダーをスキップ
+                        if line.strip():
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                drive = parts[0]
+                                drive_type = parts[-1]
+                                # DriveType 2 = Removable
+                                if drive_type == '2':
+                                    print(f"  {Fore.GREEN}[リムーバブル]{Style.RESET_ALL} {drive}")
+                                else:
+                                    print(f"  {drive} (DriveType: {drive_type})")
+            except Exception as e:
+                self.print_warning(f"ドライブ検出エラー: {e}")
+        
+        elif system == "Darwin":  # macOS
+            # macOS: diskutil コマンドでリムーバブルドライブを検出
+            try:
+                result = subprocess.run(
+                    ['diskutil', 'list', '-plist'],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    # 簡易版: diskutil list でテキスト表示
+                    result_text = subprocess.run(
+                        ['diskutil', 'list'],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    print(f"\n{Fore.CYAN}検出されたディスク:{Style.RESET_ALL}")
+                    print(result_text.stdout)
+                    
+                    # /Volumes 以下のマウント済みボリュームも表示
+                    volumes_path = Path("/Volumes")
+                    if volumes_path.exists():
+                        print(f"\n{Fore.CYAN}マウント済みボリューム:{Style.RESET_ALL}")
+                        for volume in volumes_path.iterdir():
+                            if volume.name != "Macintosh HD" and volume.is_dir():
+                                print(f"  {Fore.GREEN}[Volume]{Style.RESET_ALL} /Volumes/{volume.name}")
+                
+            except Exception as e:
+                self.print_warning(f"ドライブ検出エラー: {e}")
+        
+        elif system == "Linux":
+            # Linux: lsblk コマンドでブロックデバイスを表示
+            try:
+                result = subprocess.run(
+                    ['lsblk', '-o', 'NAME,SIZE,TYPE,MOUNTPOINT'],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    print(f"\n{Fore.CYAN}検出されたブロックデバイス:{Style.RESET_ALL}")
+                    print(result.stdout)
+            except Exception as e:
+                self.print_warning(f"ドライブ検出エラー: {e}")
+        
+        else:
+            self.print_warning(f"未対応のOS: {system}")
         
         print("\n" + "=" * 60)
         print(f"{Fore.YELLOW}注意: 必ずリムーバブルドライブ（SDカード）を選択してください{Style.RESET_ALL}")
@@ -192,7 +241,7 @@ class SDCardWriter:
         SDカードに書き込み
         
         Args:
-            target_drive: ターゲットドライブパス（例: "E:" または "E:\\"）
+            target_drive: ターゲットドライブパス（例: "E:" または "/Volumes/SDCARD"）
             use_hdmi: HDMI出力を使用
             enable_uart: UART通信を有効化
             dry_run: ドライラン（実際には書き込まない）
@@ -200,15 +249,30 @@ class SDCardWriter:
         Returns:
             bool: 成功/失敗
         """
+        system = platform.system()
+        
         # ドライブパスの正規化
         target_path = Path(target_drive)
-        if not target_path.is_absolute():
-            # "E:" -> "E:\\" に変換
-            target_path = Path(f"{target_drive}\\")
+        
+        if system == "Windows":
+            if not target_path.is_absolute():
+                # "E:" -> "E:\\" に変換
+                target_path = Path(f"{target_drive}\\")
+        elif system == "Darwin" or system == "Linux":
+            # macOS/Linux: 絶対パスに変換
+            if not target_path.is_absolute():
+                # 相対パスの場合は /Volumes/ を想定（macOS）
+                if system == "Darwin":
+                    target_path = Path("/Volumes") / target_drive
+                else:
+                    target_path = Path("/media") / target_drive
         
         # ドライブの存在確認
         if not dry_run and not target_path.exists():
             self.print_error(f"指定されたドライブが見つかりません: {target_path}")
+            if system == "Darwin":
+                self.print_info("ヒント: macOSでは '/Volumes/SDCARD' のような形式を使用してください")
+                self.print_info("       '--list' オプションでマウント済みボリュームを確認できます")
             return False
         
         print("\n" + "=" * 60)
@@ -297,30 +361,33 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用例:
-  # ドライブ一覧を表示（Windows）
+  # ドライブ一覧を表示
   python sd_writer.py --list
   
-  # E:ドライブに書き込み（HDMI出力使用）
+  # Windows: E:ドライブに書き込み（HDMI出力使用）
   python sd_writer.py --drive E: --hdmi
   
-  # E:ドライブに書き込み（UART通信使用）
-  python sd_writer.py --drive E: --uart
+  # macOS: マウントされたSDカードに書き込み（HDMI出力使用）
+  python sd_writer.py --drive /Volumes/SDCARD --hdmi
+  
+  # UART通信を使用
+  python sd_writer.py --drive /Volumes/SDCARD --uart
   
   # ドライラン（実際には書き込まない）
-  python sd_writer.py --drive E: --hdmi --dry-run
+  python sd_writer.py --drive /Volumes/SDCARD --hdmi --dry-run
         """
     )
     
     parser.add_argument(
         '--list', '-l',
         action='store_true',
-        help='利用可能なドライブを一覧表示（Windows）'
+        help='利用可能なドライブを一覧表示（Windows/macOS/Linux）'
     )
     
     parser.add_argument(
         '--drive', '-d',
         type=str,
-        help='ターゲットドライブ（例: E: または /media/sdcard）'
+        help='ターゲットドライブ（例: Windows=E: / macOS=/Volumes/SDCARD / Linux=/media/sdcard）'
     )
     
     parser.add_argument(
@@ -376,8 +443,14 @@ def main():
     
     # 書き込みモード
     if not args.drive:
+        system = platform.system()
         print(f"{Fore.RED}エラー: --drive オプションが必要です{Style.RESET_ALL}")
-        print("使用方法: python sd_writer.py --drive E: --hdmi")
+        if system == "Windows":
+            print("使用方法: python sd_writer.py --drive E: --hdmi")
+        elif system == "Darwin":
+            print("使用方法: python sd_writer.py --drive /Volumes/SDCARD --hdmi")
+        else:
+            print("使用方法: python sd_writer.py --drive /media/sdcard --hdmi")
         print("または: python sd_writer.py --list でドライブ一覧を表示")
         return 1
     

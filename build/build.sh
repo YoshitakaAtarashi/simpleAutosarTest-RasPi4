@@ -2,6 +2,7 @@
 #
 # Build script for Trampoline AUTOSAR OS on Raspberry Pi
 # This script compiles the application and generates the ELF file
+# Note: Use bash, not zsh, to ensure proper variable expansion
 #
 
 # カラー定義
@@ -16,9 +17,10 @@ echo -e "${GREEN}================================================${NC}"
 echo ""
 
 # 設定
-TRAMPOLINE_ROOT="../trampoline"
-APP_DIR="$(dirname "$0")/../app"
-BUILD_DIR="$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TRAMPOLINE_ROOT="$SCRIPT_DIR/../trampoline"
+APP_DIR="$SCRIPT_DIR/../app"
+BUILD_DIR="$SCRIPT_DIR"
 OUTPUT_DIR="$BUILD_DIR/output"
 
 # Trampolineのパスチェック
@@ -59,7 +61,8 @@ echo -e "${GREEN}[3/5] Compiling application...${NC}"
 cd "$BUILD_DIR"
 
 # コンパイルフラグ
-CFLAGS="-mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -O2 -Wall -Wextra"
+# Raspberry Pi 4 uses Cortex-A72 (ARMv8-A architecture)
+CFLAGS="-march=armv8-a -mtune=cortex-a72 -mfloat-abi=hard -mfpu=neon-fp-armv8 -O2 -Wall -Wextra"
 CFLAGS="$CFLAGS -nostdlib -nostartfiles -ffreestanding"
 CFLAGS="$CFLAGS -I$APP_DIR -I$TRAMPOLINE_ROOT/os -I$TRAMPOLINE_ROOT/machines/arm/rpi"
 CFLAGS="$CFLAGS -DRPI4"
@@ -69,10 +72,19 @@ APP_SOURCES="$APP_DIR/main.c $APP_DIR/uart_comm.c"
 
 # コンパイル
 echo "  Compiling: main.c"
-arm-none-eabi-gcc $CFLAGS -c $APP_DIR/main.c -o $OUTPUT_DIR/main.o
+arm-none-eabi-gcc $CFLAGS -c "$APP_DIR/main.c" -o "$OUTPUT_DIR/main.o"
 
 echo "  Compiling: uart_comm.c"
-arm-none-eabi-gcc $CFLAGS -c $APP_DIR/uart_comm.c -o $OUTPUT_DIR/uart_comm.o
+arm-none-eabi-gcc $CFLAGS -c "$APP_DIR/uart_comm.c" -o "$OUTPUT_DIR/uart_comm.o"
+
+echo "  Compiling: framebuffer.c"
+arm-none-eabi-gcc $CFLAGS -c "$APP_DIR/framebuffer.c" -o "$OUTPUT_DIR/framebuffer.o"
+
+echo "  Compiling: boot.S"
+arm-none-eabi-gcc $CFLAGS -c "$APP_DIR/boot.S" -o "$OUTPUT_DIR/boot.o"
+
+echo "  Compiling: tpl_os_stubs.c"
+arm-none-eabi-gcc $CFLAGS -c "$APP_DIR/tpl_os_stubs.c" -o "$OUTPUT_DIR/tpl_os_stubs.o"
 
 echo ""
 
@@ -80,19 +92,19 @@ echo -e "${GREEN}[4/5] Linking...${NC}"
 # リンカスクリプト（簡易版を使用）
 LDFLAGS="-T $BUILD_DIR/link.ld -nostdlib"
 
-arm-none-eabi-ld $LDFLAGS $OUTPUT_DIR/*.o -o $OUTPUT_DIR/kernel.elf
+arm-none-eabi-ld $LDFLAGS "$OUTPUT_DIR"/*.o -o "$OUTPUT_DIR/kernel.elf"
 
 echo "  Created: $OUTPUT_DIR/kernel.elf"
 echo ""
 
 echo -e "${GREEN}[5/5] Creating binary image...${NC}"
-arm-none-eabi-objcopy $OUTPUT_DIR/kernel.elf -O binary $OUTPUT_DIR/kernel.img
+arm-none-eabi-objcopy "$OUTPUT_DIR/kernel.elf" -O binary "$OUTPUT_DIR/kernel.img"
 echo "  Created: $OUTPUT_DIR/kernel.img"
 echo ""
 
 # ファイルサイズ表示
 echo -e "${GREEN}Build Summary:${NC}"
-ls -lh $OUTPUT_DIR/kernel.elf $OUTPUT_DIR/kernel.img
+ls -lh "$OUTPUT_DIR/kernel.elf" "$OUTPUT_DIR/kernel.img"
 echo ""
 
 echo -e "${GREEN}================================================${NC}"

@@ -27,6 +27,8 @@
 
 /* グローバル変数 */
 static uint32_t task_counter = 0;
+static uint32_t counter_100ms = 0;
+static uint32_t counter_1000ms = 0;
 static uint8_t led_state = 0;
 static char rx_buffer[128];
 static volatile uint8_t rx_ready = 0;
@@ -52,6 +54,12 @@ void StartupHook(void)
 #else
     output_puts(" Serial Communication Test\n");
 #endif
+    output_puts("================================================\n");
+    output_puts(" Build: ");
+    output_puts(__DATE__);
+    output_puts(" ");
+    output_puts(__TIME__);
+    output_puts("\n");
     output_puts("================================================\n");
     output_puts("\n");
 }
@@ -160,6 +168,60 @@ TASK(TaskProcess)
             /* 受信バッファクリア */
             rx_ready = 0;
         }
+    }
+    
+    TerminateTask();
+}
+
+/**
+ * TASK: Task100ms
+ * 100ms周期でカウンターをインクリメントして表示
+ */
+TASK(Task100ms)
+{
+    StatusType status;
+    
+    /* 排他制御 */
+    status = GetResource(ResUart);
+    
+    if (status == E_OK) {
+        /* カウンタをインクリメント */
+        counter_100ms++;
+        
+        /* カウンター表示 */
+        output_puts("[100ms Task] Counter: ");
+        output_put_dec(counter_100ms);
+        output_puts("\n");
+        
+        ReleaseResource(ResUart);
+    }
+    
+    TerminateTask();
+}
+
+/**
+ * TASK: Task1000ms
+ * 1000ms周期でカウンターをインクリメントして表示
+ */
+TASK(Task1000ms)
+{
+    StatusType status;
+    
+    /* 排他制御 */
+    status = GetResource(ResUart);
+    
+    if (status == E_OK) {
+        /* カウンタをインクリメント */
+        counter_1000ms++;
+        
+        /* カウンター表示 */
+        output_puts("[1000ms Task] Counter: ");
+        output_put_dec(counter_1000ms);
+        output_puts(" | 100ms Counter: ");
+        output_put_dec(counter_100ms);
+        output_puts("\n");
+        
+        ReleaseResource(ResUart);
     }
     
     TerminateTask();
