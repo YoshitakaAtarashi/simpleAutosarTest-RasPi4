@@ -267,9 +267,51 @@ ISR(IsrUartRx)
  */
 int main(void)
 {
+    uint32_t loop_counter = 0;
+    uint32_t last_second = 0;
+    
     /* AUTOSAR OS起動 */
     StartOS(OSDEFAULTAPPMODE);
     
-    /* ここには到達しない */
+    /* 
+     * StartOS()がスタブの場合、ここに到達する
+     * シンプルなポーリングループでカウンター表示
+     */
+    
+    while(1) {
+        loop_counter++;
+        
+        /* 約1秒ごとに表示（簡易的な遅延） */
+        if (loop_counter % 1000000 == 0) {
+            last_second++;
+            
+            /* カウンター表示 */
+            output_puts("[Loop] Second: ");
+            output_put_dec(last_second);
+            output_puts(" | Counter: ");
+            output_put_dec(loop_counter / 1000000);
+            output_puts("\n");
+            
+            /* LED点滅 */
+            gpio_led_toggle();
+            
+            /* Task100msの代替デバッグ表示 */
+            counter_100ms++;
+            output_puts("  [100ms sim] Counter: ");
+            output_put_dec(counter_100ms);
+            output_puts("\n");
+        }
+        
+        /* 10秒ごとに1000msカウンター表示 */
+        if (loop_counter % 10000000 == 0) {
+            counter_1000ms++;
+            output_puts("  [1000ms sim] Counter: ");
+            output_put_dec(counter_1000ms);
+            output_puts(" | 100ms: ");
+            output_put_dec(counter_100ms);
+            output_puts("\n");
+        }
+    }
+    
     return 0;
 }

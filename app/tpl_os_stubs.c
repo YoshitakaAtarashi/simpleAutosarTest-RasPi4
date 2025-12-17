@@ -25,10 +25,8 @@ void StartOS(AppModeType mode)
     StartupHook();
     
     /* In a real implementation, this would start the scheduler */
-    /* For now, this is just a stub */
-    while(1) {
-        /* Scheduler loop would go here */
-    }
+    /* For now, we return to main() to run a simple loop */
+    /* The infinite loop is now in main() */
 }
 
 void ShutdownOS(StatusType error)
