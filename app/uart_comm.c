@@ -49,6 +49,13 @@
 /* GPIO Settings */
 #define LED_GPIO         17        /* ACT LED on GPIO17 (変更可能) */
 
+#if defined(RPI4)
+/* BCM2711 GPIO Pull-up/down control registers (new method) */
+/* Each register controls 16 GPIOs, 2 bits each: 00=no pull, 01=pull up, 10=pull down */
+#define GPIO_PUP_PDN_CNTRL_REG0  ((volatile uint32_t*)(GPIO_BASE + 0xE4))
+#define GPIO_PUP_PDN_CNTRL_REG1  ((volatile uint32_t*)(GPIO_BASE + 0xE8))
+#endif
+
 /**
  * Delay function (approximate)
  */
@@ -75,19 +82,38 @@ void uart_init(uint32_t baudrate)
     *GPFSEL1 = ra;
     
     /* プルアップ/ダウン無効化 */
+#if defined(RPI4)
+    /* BCM2711: New GPIO pull-up/down method via GPIO_PUP_PDN_CNTRL_REG0.
+     * REG0 covers GPIO 0-15, with 2 bits per pin (bits [2n+1:2n] for GPIO n):
+     *   GPIO14 = bits [29:28], GPIO15 = bits [31:30]
+     * Encoding: 00=no pull, 01=pull up, 10=pull down.
+     * Clear both fields → no pull on UART RX/TX pins. */
+    uint32_t pud = *GPIO_PUP_PDN_CNTRL_REG0;
+    pud &= ~((3u << 28) | (3u << 30));
+    *GPIO_PUP_PDN_CNTRL_REG0 = pud;
+#else
+    /* BCM2835/2836/2837: Old GPPUD/GPPUDCLK method */
     *GPPUD = 0;
     delay(150);
     *GPPUDCLK0 = (1 << 14) | (1 << 15);
     delay(150);
     *GPPUDCLK0 = 0;
+#endif
     
     /* 割り込みクリア */
     *UART0_ICR = 0x7FF;
     
-    /* ボーレート設定（3MHz UARTクロック想定） */
+    /* ボーレート設定 */
     /* Baud rate divisor = UARTCLK / (16 * Baud rate) */
-    /* 例: 3000000 / (16 * 115200) = 1.627 -> IBRD=1, FBRD=40 */
+    /* Combined 6-bit fractional divisor: (UARTCLK * 4) / Baud rate */
+    /* IBRD = combined >> 6,  FBRD = combined & 0x3F */
+#if defined(RPI4)
+    /* RPI4 (BCM2711): default UART0 clock is 48 MHz */
+    uint32_t divisor = (48000000 * 4) / baudrate;
+#else
+    /* RPI1/2/3: default UART0 clock is 3 MHz */
     uint32_t divisor = (3000000 * 4) / baudrate;
+#endif
     *UART0_IBRD = divisor >> 6;
     *UART0_FBRD = divisor & 0x3F;
     

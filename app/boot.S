@@ -1,6 +1,9 @@
 /*
- * Boot code for Raspberry Pi
- * This is a minimal boot stub for bare metal applications
+ * Boot code for Raspberry Pi 4 (AArch32 mode)
+ * This is a minimal boot stub for bare metal applications.
+ *
+ * Raspberry Pi 4 (BCM2711) boots all cores in AArch32 HYP mode (EL2).
+ * We must switch to SVC mode (EL1) before running application code.
  */
 
 .section ".text.boot"
@@ -14,6 +17,26 @@ _start:
     cmp r0, #0
     bne halt
 
+    /*
+     * Raspberry Pi 4 boots in AArch32 HYP mode (EL2).
+     * Switch to SVC mode (EL1) using ERET from HYP.
+     */
+    mrs r1, cpsr                /* Save full CPSR for later reuse */
+    and r0, r1, #0x1F           /* Extract current mode bits */
+    cmp r0, #0x1A               /* 0x1A = HYP mode */
+    bne _skip_hyp_exit
+
+    /* Build SPSR for SVC mode with IRQ/FIQ disabled */
+    bic r0, r1, #0x1F           /* Clear mode bits (reuse saved CPSR) */
+    orr r0, r0, #0x13           /* SVC mode */
+    orr r0, r0, #0xC0           /* Disable IRQ and FIQ */
+    msr spsr_cxsf, r0
+    /* Set ELR_hyp to the instruction after the eret */
+    adr r0, _skip_hyp_exit
+    msr elr_hyp, r0
+    eret                        /* Switch to SVC mode */
+
+_skip_hyp_exit:
     /* Set stack pointer */
     ldr sp, =__stack_end
 

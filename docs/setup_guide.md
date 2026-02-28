@@ -101,6 +101,8 @@ SDカードのルートに `config.txt` を作成:
 # Raspberry Pi 4 Configuration for Bare Metal
 
 # ARMモード（32-bit）
+# RPi4はデフォルトでHYPモード(EL2)で起動します。
+# boot.SのHYP→SVCモード遷移コードが自動的に対応します。
 arm_64bit=0
 kernel=kernel.img
 kernel_address=0x8000
@@ -113,8 +115,11 @@ hdmi_force_hotplug=1
 gpu_mem=64
 
 # UART設定（シリアル使用時のみ）
+# RPi4はBluetoothがUART0を使用するため、disable-btが必要
 enable_uart=1
 dtoverlay=disable-bt
+# 注意: BCM2711のデフォルトUART0クロックは48MHzです。
+# uart_comm.cは#ifdef RPI4でこの値を自動的に使用します。
 
 # オーバークロック（任意）
 #arm_freq=1800
