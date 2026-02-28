@@ -84,10 +84,10 @@ void uart_init(uint32_t baudrate)
     /* 割り込みクリア */
     *UART0_ICR = 0x7FF;
     
-    /* ボーレート設定（3MHz UARTクロック想定） */
+    /* ボーレート設定（RPi4 UART0 PL011クロック: 48MHz） */
     /* Baud rate divisor = UARTCLK / (16 * Baud rate) */
-    /* 例: 3000000 / (16 * 115200) = 1.627 -> IBRD=1, FBRD=40 */
-    uint32_t divisor = (3000000 * 4) / baudrate;
+    /* 例: 48000000 / (16 * 115200) = 26.04 -> IBRD=26, FBRD=2 */
+    uint32_t divisor = (48000000 * 4) / baudrate;
     *UART0_IBRD = divisor >> 6;
     *UART0_FBRD = divisor & 0x3F;
     

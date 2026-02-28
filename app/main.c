@@ -99,8 +99,7 @@ void ShutdownHook(StatusType error)
 TASK(TaskSerial)
 {
     StatusType status;
-    char msg[64];
-    
+
     /* UART排他制御 */
     status = GetResource(ResUart);
     

@@ -167,7 +167,7 @@ static uint32_t mailbox_read(uint32_t channel) {
 /* Initialize framebuffer */
 int fb_init(void) {
     /* Setup mailbox message */
-    mailbox[0] = 35 * 4;              /* Total size */
+    mailbox[0] = 26 * 4;              /* Total size (26 words) */
     mailbox[1] = 0;                   /* Request code */
     
     /* Set physical display size */
