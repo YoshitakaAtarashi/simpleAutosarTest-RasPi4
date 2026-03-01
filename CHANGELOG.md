@@ -41,6 +41,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- UART clock frequency corrected from 3 MHz to 48 MHz for Raspberry Pi 4 UART0 (PL011),
+  which previously caused ~16× baud rate error and garbled serial output
+- Removed unused variable `msg` in `TaskSerial` (was causing a compiler warning with `-Wall`)
+- Corrected mailbox buffer size declaration in `fb_init()` from 35 words to the actual 26 words used
+
+### Documentation
+- Added "Known Issues" section to README explaining why Trampoline RTOS tasks are not scheduled
+- Documented the AArch32 boot code requirement (`arm_64bit=0` in config.txt)
+
 ### Planned Features
 - Multi-core support (utilize all 4 Cortex-A72 cores)
 - I2C driver implementation
