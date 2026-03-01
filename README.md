@@ -261,6 +261,38 @@ CPU rpi4 {
 - [HDMI Output](docs/hdmi_output.md) - Framebuffer implementation details
 - [PC Tools](pc_tools/README.md) - Serial monitor and SD writer usage
 
+## ⚠️ Known Issues
+
+### 1. Trampoline RTOS Scheduler Not Running
+
+The current implementation uses minimal stub functions in `tpl_os_stubs.c` — **the real Trampoline RTOS is not integrated**.
+
+- `StartOS()` calls `StartupHook()` and returns immediately without starting a scheduler
+- `ActivateTask()` only sets a state flag; the task function is never actually called
+- Tasks like `TaskSerial`, `TaskBlink`, and `TaskProcess` are never executed
+- A simple polling loop in `main()` runs instead
+
+**To use the real Trampoline RTOS:**
+```bash
+git clone https://github.com/TrampolineRTOS/trampoline.git ../trampoline
+# Compile the OIL file with the goil tool and link with the real OS kernel
+```
+
+### 2. UART Baud Rate Bug (Fixed)
+
+A previous version of `uart_comm.c` used **3 MHz** as the UART clock frequency,
+but the Raspberry Pi 4 UART0 (PL011) clock is **48 MHz**.
+This caused the actual baud rate to be ~16× too high, resulting in garbled serial output.
+
+### 3. Boot Code Architecture
+
+`boot.S` is written for 32-bit ARM (AArch32). The Raspberry Pi 4 boots in **AArch64 (64-bit) mode** by default.
+To run 32-bit code, add the following to `config.txt`:
+
+```
+arm_64bit=0
+```
+
 ## 🐛 Troubleshooting
 
 ### Build Errors

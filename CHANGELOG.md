@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+
 - **RasPi4 boot**: Added AArch32 HYP→SVC mode transition in `boot.S`.
   Raspberry Pi 4 (BCM2711) boots ARM cores in HYP mode (EL2) when
   `arm_64bit=0` is set; the OS must switch to SVC mode (EL1) before
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `uart_comm.c` for BCM2711.  The old GPPUD/GPPUDCLK0 sequence does not
   work on RPi4; BCM2711 uses dedicated `GPIO_PUP_PDN_CNTRL_REG0/1`
   registers at GPIO_BASE+0xE4/0xE8.
+
 
 ### Planned Features
 - Multi-core support (utilize all 4 Cortex-A72 cores)

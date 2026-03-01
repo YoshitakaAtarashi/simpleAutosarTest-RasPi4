@@ -102,7 +102,7 @@ void uart_init(uint32_t baudrate)
     
     /* 割り込みクリア */
     *UART0_ICR = 0x7FF;
-    
+
     /* ボーレート設定 */
     /* Baud rate divisor = UARTCLK / (16 * Baud rate) */
     /* Combined 6-bit fractional divisor: (UARTCLK * 4) / Baud rate */
@@ -114,6 +114,7 @@ void uart_init(uint32_t baudrate)
     /* RPI1/2/3: default UART0 clock is 3 MHz */
     uint32_t divisor = (3000000 * 4) / baudrate;
 #endif
+
     *UART0_IBRD = divisor >> 6;
     *UART0_FBRD = divisor & 0x3F;
     

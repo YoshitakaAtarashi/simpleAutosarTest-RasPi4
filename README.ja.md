@@ -262,6 +262,39 @@ CPU rpi4 {
 - [HDMI 出力](docs/hdmi_output.md) - フレームバッファ実装詳細
 - [PC ツール](pc_tools/README.md) - シリアルモニターと SD ライターの使用方法
 
+## ⚠️ 既知の問題（なぜ失敗するのか）
+
+### 1. Trampoline RTOS のスケジューラが動作していない
+
+現在の実装では、`tpl_os_stubs.c` に最小限のスタブ実装が使われており、**本物の Trampoline RTOS は組み込まれていません**。
+
+- `StartOS()` は `StartupHook()` を呼び出して即座に返ります（スケジューラを起動しません）
+- `ActivateTask()` はタスクの状態フラグを変更するだけで、タスク関数を実際には呼び出しません
+- `TaskSerial`、`TaskBlink`、`TaskProcess` などのタスク関数は決して実行されません
+- 代わりに `main()` 内のポーリングループが動作しています
+
+**本物の Trampoline RTOS を使うには:**
+```bash
+git clone https://github.com/TrampolineRTOS/trampoline.git ../trampoline
+# goil ツールで OIL ファイルをコンパイルし、本物の OS カーネルとリンクする必要があります
+```
+
+### 2. UART ボーレートの不具合（修正済み）
+
+以前のバージョンでは `uart_comm.c` 内の UART クロック周波数が **3 MHz** に設定されていましたが、
+Raspberry Pi 4 の UART0 (PL011) クロックは **48 MHz** です。
+これにより実際のボーレートが約 16 倍になり、シリアル出力が文字化けしていました。
+
+### 3. ブートコードのアーキテクチャ
+
+`boot.S` は 32 ビット ARM (AArch32) 用に記述されています。
+Raspberry Pi 4 は デフォルトで **AArch64（64 ビット）モード** で起動します。
+32 ビットコードを動作させるには `config.txt` に以下の設定が必要です:
+
+```
+arm_64bit=0
+```
+
 ## 🐛 トラブルシューティング
 
 ### ビルドエラー
