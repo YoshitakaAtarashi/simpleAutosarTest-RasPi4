@@ -140,6 +140,12 @@ AutosarTest3/
 │   ├── build.sh                   # Linux build script
 │   ├── link.ld                    # Linker script
 │   └── output/                    # Build outputs (kernel.img)
+├── simulator/                     # PC simulator (no hardware needed)
+│   ├── build_sim.sh               # Linux/macOS simulator build script
+│   ├── build_sim.bat              # Windows simulator build script
+│   ├── sim_drivers.c              # Hardware stubs (UART/GPIO/FB → stdout)
+│   ├── sim_os.c                   # AUTOSAR OS + time-based task scheduler
+│   └── README.md                  # Simulator documentation
 ├── docs/                          # Documentation
 │   ├── setup_guide.md             # Detailed setup instructions
 │   ├── architecture.md            # System architecture
@@ -260,6 +266,39 @@ CPU rpi4 {
 - [Architecture](docs/architecture.md) - System design and components
 - [HDMI Output](docs/hdmi_output.md) - Framebuffer implementation details
 - [PC Tools](pc_tools/README.md) - Serial monitor and SD writer usage
+
+## 🖥️ PC Simulator
+
+No Raspberry Pi 4 hardware? You can verify operation on your PC with the built-in software simulator.
+
+```bash
+cd simulator
+bash build_sim.sh run   # Linux / macOS
+build_sim.bat run       # Windows (MinGW)
+```
+
+Expected output:
+```
+[SIM] Framebuffer initialized (1024x768 @ 32bpp)
+[SIM] GPIO initialized (LED on GPIO17)
+
+================================================
+ Trampoline AUTOSAR OS on Raspberry Pi 4
+ HDMI Display Test
+================================================
+
+[SIM] AUTOSAR task scheduler started
+[SIM] Press Ctrl+C to stop the simulation
+
+[100ms Task] Counter: 1
+[SIM] LED ON
+[TaskSerial] Count: 1 | Uptime: 1 sec
+[1000ms Task] Counter: 1 | 100ms Counter: 1
+...
+```
+
+The simulator runs all AUTOSAR tasks at their OIL-configured periods using real wall-clock time.  
+See [simulator/README.md](simulator/README.md) for full documentation.
 
 ## ⚠️ Known Issues
 

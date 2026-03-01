@@ -8,6 +8,10 @@ build/output/
 *.map
 *.lst
 
+# Simulator build output
+simulator/sim_app
+simulator/sim_app.exe
+
 # Python cache
 __pycache__/
 *.py[cod]

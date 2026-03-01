@@ -262,6 +262,40 @@ CPU rpi4 {
 - [HDMI 出力](docs/hdmi_output.md) - フレームバッファ実装詳細
 - [PC ツール](pc_tools/README.md) - シリアルモニターと SD ライターの使用方法
 
+## 🖥️ PC シミュレータ
+
+Raspberry Pi 4 実機がなくても、**PC 上で動作確認**できます。
+
+```bash
+cd simulator
+bash build_sim.sh run   # Linux / macOS
+build_sim.bat run       # Windows (MinGW)
+```
+
+実行すると以下のような出力が得られます:
+
+```
+[SIM] Framebuffer initialized (1024x768 @ 32bpp)
+[SIM] GPIO initialized (LED on GPIO17)
+
+================================================
+ Trampoline AUTOSAR OS on Raspberry Pi 4
+ HDMI Display Test
+================================================
+
+[SIM] AUTOSAR task scheduler started
+[SIM] Press Ctrl+C to stop the simulation
+
+[100ms Task] Counter: 1
+[SIM] LED ON
+[TaskSerial] Count: 1 | Uptime: 1 sec
+[1000ms Task] Counter: 1 | 100ms Counter: 1
+...
+```
+
+`app/app.oil` に定義されたアラーム周期どおりに各 AUTOSAR タスクが実際に呼び出されます。  
+詳細は [simulator/README.md](simulator/README.md) を参照してください。
+
 ## ⚠️ 既知の問題（なぜ失敗するのか）
 
 ### 1. Trampoline RTOS のスケジューラが動作していない
